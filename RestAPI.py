@@ -13,7 +13,6 @@ class MainKeyword(Resource):
     # C
     # 1. 사용자의 키워드 등록
     # 필요: 유저아이디, 메인키워드
-
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('userid', type=str)
@@ -24,7 +23,8 @@ class MainKeyword(Resource):
         main_keyword = args['main']
 
         if user_id and main_keyword:
-            sql = f"insert into mainKeyword (userid, main) values ('{user_id}', '{main_keyword}')"
+            # sql = f"insert into mainKeyword (userid, main) values ('{user_id}', '{main_keyword}')"
+            sql = f"insert into mainKeyword(main, userid) select '{main_keyword}', '{user_id}' from DUAL where not EXISTS(select main from mainKeyword where userid = '{user_id}' and main = '{main_keyword}')"
             db.curs.execute(sql)
             db.conn.commit()
             row = db.curs.fetchall()
@@ -37,7 +37,6 @@ class MainKeyword(Resource):
     # R
     # 1. 사용자의 메인키워드 조회
     # 필요: 유저아이디
-
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('userid', type=str)
