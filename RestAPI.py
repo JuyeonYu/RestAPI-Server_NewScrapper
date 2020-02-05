@@ -112,7 +112,8 @@ class SubKeyword(Resource):
         sub_keyword = args['sub']
 
         if user_id and main_keyword:
-            sql = f"insert into subKeyword (userid, main, sub) values ('{user_id}', '{main_keyword}', '{sub_keyword}')"
+            # sql = f"insert into subKeyword (userid, main, sub) values ('{user_id}', '{main_keyword}', '{sub_keyword}')"
+            sql = f"insert into subKeyword(main, sub, userid) select '{main_keyword}', '{user_id}', '{sub_keyword}' from DUAL where not EXISTS(select sub from subKeyword where userid = '{user_id}' and main = '{main_keyword}' and sub = '{sub_keyword}')"
             db.curs.execute(sql)
             db.conn.commit()
             row = db.curs.fetchall()
