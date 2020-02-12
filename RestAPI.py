@@ -20,68 +20,30 @@ class MainKeyword(Resource):
     # 다음의 4번의 쿼리가 필요함
     # 1. 키워드 테이블에 키워드를 등록
     # 2. 1에서 등록한 키워드의 인덱스를 얻음
-    # 2. 유저테이블에서 유저 인덱스를 받음
     # 3. 2,3에서 얻은 인덱스를 유저_키워드 테이블에 저장
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('userid', type=str)
-        parser.add_argument('main', type=str)
+        parser.add_argument('idx_user', type=str)
+        parser.add_argument('keyword', type=str)
 
         args = parser.parse_args()
-        user_id = args['userid']
-        main_keyword = args['main']
-
-        print(main_keyword, user_id)
+        idx_user = args['idx_user']
+        keyword = args['keyword']
 
         # if user_id and main_keyword:
-        sql1 = f"insert into mainKeyword (keyword) value ('{main_keyword}')"
+        sql1 = f"insert into mainKeyword (keyword) value ('{keyword}')"
         db.curs.execute(sql1)
         db.conn.commit()
 
-        sql2 = f"select idx from user where id = '{user_id}'"
+        sql2 = f"select idx from mainKeyword where keyword = '{한샘}'"
         db.curs.execute(sql2)
         row = db.curs.fetchone()
-        user_index = row[0]
+        idx_keyword = row[0]
 
-        sql3 = f"select idx from mainKeyword where keyword = ('{main_keyword}')"
+        sql3 = f"insert into user_mainKeyword (idx_user, idx_keyword) values ({idx_user},{idx_keyword})"
         db.curs.execute(sql3)
-        row = db.curs.fetchone()
-        keyword_index = row[0]
-
-        sql4 = f"insert into user_mainKeyword (user_index, keyword_index) values ({user_index},{keyword_index})"
-        db.curs.execute(sql4)
         db.conn.commit()
-
-        # if test:
-        #     print('test')
-        #     sql = f"insert into test(test) value (1)"
-        #     db.curs.execute(sql)
-        #
-        #     sql = f"insert into test(test) value (2)"
-        #     db.curs.execute(sql)
-        #
-        #     db.conn.commit()
-
-
-
-
-
-        # if user_id and main_keyword:
-        #     # sql = f"insert into mainKeyword (userid, main) values ('{user_id}', '{main_keyword}')"
-        #     sql = f"insert into mainKeyword(main, userid) " \
-        #         f"select '{main_keyword}', '{user_id}' " \
-        #         f"from DUAL " \
-        #         f"where not EXISTS(select main from mainKeyword " \
-        #         f"where userid = '{user_id}' and main = '{main_keyword}')"
-        #     db.curs.execute(sql)
-        #     db.conn.commit()
-        #     row = db.curs.fetchall()
-        #
-        #     if not row:
-        #         return '{code: 1}'  # success
-        #     else:
-        #         return row
 
     # R
     # 1. 사용자의 메인키워드(들) 조회
@@ -134,16 +96,13 @@ class MainKeyword(Resource):
 
     def delete(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('userid', type=str)
-        parser.add_argument('main', type=str)
+        parser.add_argument('idx_keyword', type=str)
 
         args = parser.parse_args()
-        user_id = args['userid']
-        main_keyword = args['main']
+        idx_keyword = args['idx_keyword']
 
-        if user_id:
-            print(user_id, main_keyword)
-            sql = f"delete from mainKeyword where userid = '{user_id}' and main = '{main_keyword}'"
+        if idx_keyword:
+            sql = f"delete from user_mainKeyword where idx_keyword = {idx_keyword}"
             db.curs.execute(sql)
             db.conn.commit()
             row = db.curs.fetchall()
