@@ -1,9 +1,12 @@
 from flask_restful import Resource, reqparse
+from flask_restful.representations import json
+
 from DataBaseManager import DatabaseManager
+from flask import Flask, jsonify
 
 
-db = DatabaseManager('54.180.88.102', 'johnny', 'qwas8800', 'newScrapper')
 
+db = DatabaseManager('54.180.119.242', 'johnny', 'qwas8800', 'newScrapper')
 
 class MainKeyword(Resource):
 
@@ -13,6 +16,13 @@ class MainKeyword(Resource):
     # C
     # 1. 사용자의 키워드 등록
     # 필요: 유저아이디, 메인키워드
+
+    # 다음의 4번의 쿼리가 필요함
+    # 1. 키워드 테이블에 키워드를 등록
+    # 2. 1에서 등록한 키워드의 인덱스를 얻음
+    # 2. 유저테이블에서 유저 인덱스를 받음
+    # 3. 2,3에서 얻은 인덱스를 유저_키워드 테이블에 저장
+
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('userid', type=str)
@@ -22,39 +32,93 @@ class MainKeyword(Resource):
         user_id = args['userid']
         main_keyword = args['main']
 
-        if user_id and main_keyword:
-            # sql = f"insert into mainKeyword (userid, main) values ('{user_id}', '{main_keyword}')"
-            sql = f"insert into mainKeyword(main, userid) select '{main_keyword}', '{user_id}' from DUAL where not EXISTS(select main from mainKeyword where userid = '{user_id}' and main = '{main_keyword}')"
-            db.curs.execute(sql)
-            db.conn.commit()
-            row = db.curs.fetchall()
+        print(main_keyword, user_id)
 
-            if not row:
-                return '{code: 1}'  # success
-            else:
-                return row
+        # if user_id and main_keyword:
+        sql1 = f"insert into mainKeyword (keyword) value ('{main_keyword}')"
+        db.curs.execute(sql1)
+        db.conn.commit()
+
+        sql2 = f"select idx from user where id = '{user_id}'"
+        db.curs.execute(sql2)
+        row = db.curs.fetchone()
+        user_index = row[0]
+
+        sql3 = f"select idx from mainKeyword where keyword = ('{main_keyword}')"
+        db.curs.execute(sql3)
+        row = db.curs.fetchone()
+        keyword_index = row[0]
+
+        sql4 = f"insert into user_mainKeyword (user_index, keyword_index) values ({user_index},{keyword_index})"
+        db.curs.execute(sql4)
+        db.conn.commit()
+
+        # if test:
+        #     print('test')
+        #     sql = f"insert into test(test) value (1)"
+        #     db.curs.execute(sql)
+        #
+        #     sql = f"insert into test(test) value (2)"
+        #     db.curs.execute(sql)
+        #
+        #     db.conn.commit()
+
+
+
+
+
+        # if user_id and main_keyword:
+        #     # sql = f"insert into mainKeyword (userid, main) values ('{user_id}', '{main_keyword}')"
+        #     sql = f"insert into mainKeyword(main, userid) " \
+        #         f"select '{main_keyword}', '{user_id}' " \
+        #         f"from DUAL " \
+        #         f"where not EXISTS(select main from mainKeyword " \
+        #         f"where userid = '{user_id}' and main = '{main_keyword}')"
+        #     db.curs.execute(sql)
+        #     db.conn.commit()
+        #     row = db.curs.fetchall()
+        #
+        #     if not row:
+        #         return '{code: 1}'  # success
+        #     else:
+        #         return row
 
     # R
-    # 1. 사용자의 메인키워드 조회
+    # 1. 사용자의 메인키워드(들) 조회
     # 필요: 유저아이디
+
+    # 다음의 1번의 조인 쿼리가 필요함
+    # 1. 키워드_유저 테이블과 키워드 테
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('userid', type=str)
-
         args = parser.parse_args()
         user_id = args['userid']
 
         if user_id :
-            # sql = f"select sub from mainKeyword right join subKeyword on mainKeyword.main = subKeyword.main where subKeyword.main = '{mainKeyword}' and userID ='{userID}'"
-            sql = f"select main from mainKeyword where userid = '{user_id}'"
+            # sql = f"# select idx from user where id ='{user_id}'"
+            sql = f"select keyword, idx_keyword from mainKeyword mk, `user` u , user_mainKeyword umk " \
+                f"where mk.idx  = umk.idx_keyword " \
+                f"and u.id  = '{user_id}'"
             db.curs.execute(sql)
-            db.conn.commit()
-            rows = [item[0] for item in db.curs.fetchall()]
 
-            if rows is None:
+            keys = []
+            for column in db.curs.description:
+                keys.append(column[0])
+            key_number = len(keys)
+
+            json_data = []
+            for row in db.curs.fetchall():
+                item = dict()
+                for q in range(key_number):
+                    item[keys[q]] = row[q]
+                json_data.append(item)
+            data = jsonify(json_data)
+
+            if data is None:
                 return ''
             else:
-                return rows
+                return data
         else:
             return '{error: userID or mainKeyword parameter null}'
 
@@ -79,7 +143,7 @@ class MainKeyword(Resource):
 
         if user_id:
             print(user_id, main_keyword)
-            sql = f"delete from mainKeyword where userID = '{user_id}' and main = '{main_keyword}'"
+            sql = f"delete from mainKeyword where userid = '{user_id}' and main = '{main_keyword}'"
             db.curs.execute(sql)
             db.conn.commit()
             row = db.curs.fetchall()
