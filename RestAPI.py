@@ -1,22 +1,15 @@
 from flask_restful import Resource, reqparse
 from flask_restful.representations import json
-
 from DataBaseManager import DatabaseManager
 from flask import Flask, jsonify
-
-
 
 db = DatabaseManager('54.180.119.242', 'johnny', 'qwas8800', 'newScrapper')
 
 class MainKeyword(Resource):
-
     # 메인키워드 테이블 CRUD
-    # 필요한 파라미터: 유저아이디, 메인키워드(unique)
-
+    
     # C
     # 1. 사용자의 키워드 등록
-    # 필요: 유저아이디, 메인키워드
-
     # 다음의 4번의 쿼리가 필요함
     # 1. 키워드 테이블에 키워드를 등록
     # 2. 1에서 등록한 키워드의 인덱스를 얻음
@@ -47,8 +40,6 @@ class MainKeyword(Resource):
 
     # R
     # 1. 사용자의 메인키워드(들) 조회
-    # 필요: 유저아이디
-
     # 다음의 1번의 조인 쿼리가 필요함
     # 1. 키워드_유저 테이블과 키워드 테
     def get(self):
@@ -91,9 +82,6 @@ class MainKeyword(Resource):
 
     # D
     # 1. 사용자의 메인키워드 삭제
-    # 필요: 유저아이디, 메인키워드
-    #TODO: 서브키워드의 정보를 어떻게 지울지 생각해봐야함
-
     def delete(self):
         parser = reqparse.RequestParser()
         parser.add_argument('idx_keyword', type=str)
